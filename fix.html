@@ -1,0 +1,357 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Praktik Debugging - Pemesanan Tiket Bioskop (FIX)</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 28px 16px;
+      font-family: Arial, sans-serif;
+      background: #f3f5f9;
+      color: #263247;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #202e4b;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #68758a;
+      margin: 0 0 25px;
+    }
+
+    .panel {
+      background: #fff;
+      padding: 23px;
+      border-radius: 14px;
+      margin-bottom: 18px;
+      box-shadow: 0 5px 18px #20305012;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin: 0 0 18px;
+    }
+
+    .mode {
+      background: #18794e;
+      color: white;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 15px 0 7px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd3df;
+      border-radius: 8px;
+      font-size: 15px;
+      background: #fff;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-weight: bold;
+    }
+
+    #submit {
+      background: #18794e;
+      color: white;
+    }
+
+    #reset, #clear {
+      background: #68758a;
+      color: white;
+    }
+
+    #message {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+
+    #message.error {
+      display: block;
+      background: #fff0f0;
+      color: #a32232;
+    }
+
+    #message.success {
+      display: block;
+      background: #eaf8ef;
+      color: #17633d;
+    }
+
+    .list-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .list-head h2 {
+      margin: 0;
+    }
+
+    ul {
+      padding-left: 22px;
+      margin-bottom: 0;
+    }
+
+    li {
+      padding: 10px 0;
+      border-bottom: 1px solid #edf0f5;
+    }
+
+    .empty {
+      color: #7b8798;
+      font-style: italic;
+    }
+
+    .note {
+      color: #68758a;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 540px) {
+      .panel { padding: 18px; }
+
+      .list-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      h1 { font-size: 23px; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <h1>Praktik Debugging: Pemesanan Tiket Bioskop</h1>
+    <p class="subtitle">
+      Simulasi program setelah proses debugging dengan validasi input.
+    </p>
+
+    <section class="panel">
+      <h2>1. Formulir Pemesanan</h2>
+
+      <div class="mode">MODE FIX</div>
+
+      <form id="bookingForm">
+        <label for="customer">Nama pemesan</label>
+        <input
+          id="customer"
+          type="text"
+          placeholder="Contoh: Rangga"
+        >
+
+        <label for="movie">Film</label>
+        <select id="movie">
+          <option value="">-- Pilih film --</option>
+          <option value="Petualangan di Kota">Petualangan di Kota</option>
+          <option value="Misteri Tengah Malam">Misteri Tengah Malam</option>
+          <option value="Robot Penjelajah">Robot Penjelajah</option>
+        </select>
+
+        <label for="quantity">Jumlah tiket</label>
+        <input
+          id="quantity"
+          type="number"
+          placeholder="Contoh: 2"
+        >
+
+        <div class="actions">
+          <button id="submit" type="submit">Pesan Tiket</button>
+          <button id="reset" type="reset">Kosongkan Form</button>
+        </div>
+      </form>
+
+      <div id="message" role="status"></div>
+    </section>
+
+    <section class="panel">
+      <div class="list-head">
+        <h2>Daftar Pemesanan (<span id="count">0</span>)</h2>
+        <button id="clear" type="button">Hapus Semua</button>
+      </div>
+
+      <ul id="bookingList">
+        <li class="empty">Belum ada pemesanan.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>2. Keterangan Program</h2>
+
+      <p class="note">
+        <b>Mode FIX:</b> nama dan film wajib diisi.
+        Jumlah tiket harus berupa bilangan bulat antara 1 sampai 10.
+        Jika data tidak sesuai, sistem menampilkan pesan kesalahan
+        dan tidak menyimpan pemesanan.
+      </p>
+
+      <p class="note">
+        Coba kirim formulir kosong, masukkan jumlah tiket 0,
+        angka desimal, atau angka lebih dari 10 untuk menguji validasi.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    let bookings = [];
+
+    const form = document.getElementById("bookingForm");
+    const message = document.getElementById("message");
+
+    // Menampilkan pesan
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = type;
+    }
+
+    // Menampilkan daftar pemesanan
+    function renderBookings() {
+      const list = document.getElementById("bookingList");
+
+      document.getElementById("count").textContent = bookings.length;
+      list.innerHTML = "";
+
+      if (bookings.length === 0) {
+        const item = document.createElement("li");
+        item.className = "empty";
+        item.textContent = "Belum ada pemesanan.";
+        list.appendChild(item);
+        return;
+      }
+
+      bookings.forEach((booking, index) => {
+        const item = document.createElement("li");
+
+        item.textContent =
+          `${index + 1}. ${booking.customer} — ` +
+          `${booking.movie} — ${booking.quantity} tiket`;
+
+        list.appendChild(item);
+      });
+    }
+
+    // Proses pemesanan dengan validasi (FIX)
+    function prosesPemesanan(customer, movie, quantityText) {
+      const quantity = Number(quantityText);
+
+      // Memeriksa kelengkapan data
+      if (
+        customer === "" ||
+        movie === "" ||
+        quantityText === ""
+      ) {
+        showMessage(
+          "Validasi gagal: nama, film, dan jumlah tiket wajib diisi.",
+          "error"
+        );
+
+        return;
+      }
+
+      // Memeriksa jumlah tiket
+      if (
+        !Number.isInteger(quantity) ||
+        quantity < 1 ||
+        quantity > 10
+      ) {
+        showMessage(
+          "Validasi gagal: jumlah tiket harus bilangan bulat 1–10.",
+          "error"
+        );
+
+        return;
+      }
+
+      // Menyimpan data jika semua input valid
+      bookings.push({
+        customer: customer,
+        movie: movie,
+        quantity: quantity
+      });
+
+      renderBookings();
+
+      showMessage(
+        "FIX: pemesanan berhasil ditambahkan.",
+        "success"
+      );
+
+      form.reset();
+    }
+
+    // Mengirim formulir
+    form.addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const customer =
+        document.getElementById("customer").value.trim();
+
+      const movie =
+        document.getElementById("movie").value;
+
+      const quantityText =
+        document.getElementById("quantity").value.trim();
+
+      prosesPemesanan(customer, movie, quantityText);
+    });
+
+    // Reset formulir
+    form.addEventListener("reset", function() {
+      message.textContent = "";
+      message.className = "";
+    });
+
+    // Menghapus semua pemesanan
+    document.getElementById("clear").addEventListener("click", function() {
+      bookings = [];
+      renderBookings();
+      message.textContent = "";
+      message.className = "";
+    });
+
+    // Menampilkan kondisi awal
+    renderBookings();
+  </script>
+</body>
+</html>

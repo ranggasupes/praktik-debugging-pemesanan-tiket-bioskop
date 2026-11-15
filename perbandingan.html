@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Praktik Debugging - Pemesanan Tiket Bioskop</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 28px 16px;
+      font-family: Arial, sans-serif;
+      background: #f3f5f9;
+      color: #263247;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #202e4b;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #68758a;
+      margin: 0 0 25px;
+    }
+
+    .panel {
+      background: #fff;
+      padding: 23px;
+      border-radius: 14px;
+      margin-bottom: 18px;
+      box-shadow: 0 5px 18px #20305012;
+    }
+
+    .panel h2 {
+      font-size: 20px;
+      margin: 0 0 18px;
+    }
+
+    /* Tombol mode */
+    .modes {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .modes button {
+      flex: 1;
+      background: #e9edf4;
+      color: #34445e;
+    }
+
+    .modes .bug.active {
+      background: #a83246;
+      color: #fff;
+    }
+
+    .modes .fix.active {
+      background: #18794e;
+      color: #fff;
+    }
+
+    /* Form pemesanan */
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 15px 0 7px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd3df;
+      border-radius: 8px;
+      font-size: 15px;
+      background: #fff;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    #submit {
+      background: #2457a6;
+      color: white;
+    }
+
+    #reset {
+      background: #68758a;
+      color: white;
+    }
+
+    /* Pesan validasi */
+    #message {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+
+    #message.error {
+      display: block;
+      background: #fff0f0;
+      color: #a32232;
+    }
+
+    #message.success {
+      display: block;
+      background: #eaf8ef;
+      color: #17633d;
+    }
+
+    /* Daftar pemesanan */
+    .list-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .list-head h2 {
+      font-size: 20px;
+      margin: 0;
+    }
+
+    #clear {
+      background: #e9edf4;
+      color: #34445e;
+    }
+
+    ul {
+      padding-left: 22px;
+      margin-bottom: 0;
+    }
+
+    li {
+      padding: 10px 0;
+      border-bottom: 1px solid #edf0f5;
+    }
+
+    .empty {
+      color: #7b8798;
+      font-style: italic;
+    }
+
+    /* Perbandingan kode */
+    .code-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .code-card {
+      min-width: 0;
+    }
+
+    .code-title {
+      font-weight: bold;
+      margin-bottom: 9px;
+      font-size: 14px;
+    }
+
+    .bug-title {
+      color: #b83b3b;
+    }
+
+    .fix-title {
+      color: #18794e;
+    }
+
+    .code-box {
+      background: #f8f3eb;
+      border: 1px solid #eee4d5;
+      border-radius: 9px;
+      overflow-x: auto;
+      padding: 12px 10px;
+    }
+
+    .code-box pre {
+      margin: 0;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      color: #263247;
+      white-space: pre;
+      tab-size: 2;
+    }
+
+    .code-description {
+      color: #68758a;
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 10px 0 0;
+    }
+
+    /* Catatan */
+    .note {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #68758a;
+    }
+
+    /* Tampilan responsif */
+    @media (max-width: 650px) {
+      .code-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .modes {
+        flex-direction: column;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      .list-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      h1 {
+        font-size: 23px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <h1>Praktik Debugging: Pemesanan Tiket Bioskop</h1>
+    <p class="subtitle">
+      Masukkan data pemesanan, lalu bandingkan Mode BUG dan Mode FIX.
+    </p>
+
+    <!-- PANEL PROGRAM -->
+    <section class="panel">
+      <h2>1. Coba Program</h2>
+
+      <div class="modes">
+        <button type="button" id="bugMode" class="bug active">
+          Mode BUG
+        </button>
+
+        <button type="button" id="fixMode" class="fix">
+          Mode FIX
+        </button>
+      </div>
+
+      <p>Mode aktif: <strong id="modeLabel">BUG</strong></p>
+
+      <form id="bookingForm">
+        <label for="customer">Nama pemesan</label>
+        <input id="customer" type="text" placeholder="Contoh: Rangga">
+
+        <label for="movie">Film</label>
+        <select id="movie">
+          <option value="">-- Pilih film --</option>
+          <option value="Petualangan di Kota">Petualangan di Kota</option>
+          <option value="Misteri Tengah Malam">Misteri Tengah Malam</option>
+          <option value="Robot Penjelajah">Robot Penjelajah</option>
+        </select>
+
+        <label for="quantity">Jumlah tiket</label>
+        <input id="quantity" type="number" placeholder="Contoh: 2">
+
+        <div class="actions">
+          <button id="submit" type="submit">
+            Pesan Tiket
+          </button>
+
+          <button id="reset" type="reset">
+            Kosongkan Form
+          </button>
+        </div>
+      </form>
+
+      <div id="message" role="status"></div>
+    </section>
+
+    <!-- PANEL DAFTAR PEMESANAN -->
+    <section class="panel">
+      <div class="list-head">
+        <h2>Daftar Pemesanan (<span id="count">0</span>)</h2>
+        <button id="clear" type="button">Hapus Semua</button>
+      </div>
+
+      <ul id="bookingList">
+        <li class="empty">Belum ada pemesanan.</li>
+      </ul>
+    </section>
+
+    <!-- PANEL PERBANDINGAN KODE -->
+    <section class="panel">
+      <h2>2. Perhatikan Kode JavaScript</h2>
+
+      <div class="code-grid">
+        <!-- KODE BUG -->
+        <div class="code-card">
+          <div class="code-title bug-title">
+            ✕ Sebelum / BUG
+          </div>
+
+          <div class="code-box">
+            <pre><code>function prosesBUG(
+  customer,
+  movie,
+  quantityText
+) {
+  bookings.push({
+    customer: customer || "(nama kosong)",
+    movie: movie || "(film belum dipilih)",
+    quantity: quantityText || "tidak diisi"
+  });
+
+  renderBookings();
+
+  showMessage(
+    "BUG: pemesanan ditambahkan meskipun data belum lengkap.",
+    "success"
+  );
+
+  form.reset();
+}</code></pre>
+          </div>
+
+          <p class="code-description">
+            Kesalahan: data langsung ditambahkan ke daftar pemesanan
+            tanpa pemeriksaan kelengkapan dan kebenaran input.
+          </p>
+        </div>
+
+        <!-- KODE FIX -->
+        <div class="code-card">
+          <div class="code-title fix-title">
+            ✓ Sesudah / FIX
+          </div>
+
+          <div class="code-box">
+            <pre><code>function prosesFIX(
+  customer,
+  movie,
+  quantityText
+) {
+  const quantity = Number(quantityText);
+
+  if (
+    customer === "" ||
+    movie === "" ||
+    quantityText === ""
+  ) {
+    showMessage(
+      "Nama, film, dan jumlah tiket wajib diisi.",
+      "error"
+    );
+    return;
+  }
+
+  if (
+    !Number.isInteger(quantity) ||
+    quantity < 1 ||
+    quantity > 10
+  ) {
+    showMessage(
+      "Jumlah tiket harus bilangan bulat 1-10.",
+      "error"
+    );
+    return;
+  }
+
+  bookings.push({
+    customer: customer,
+    movie: movie,
+    quantity: quantity
+  });
+
+  renderBookings();
+  showMessage(
+    "FIX: pemesanan berhasil ditambahkan.",
+    "success"
+  );
+
+  form.reset();
+}</code></pre>
+          </div>
+
+          <p class="code-description">
+            Perbaikan: sistem memeriksa kelengkapan data dan
+            memastikan jumlah tiket berupa bilangan bulat 1-10
+            sebelum menyimpan pemesanan.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL PENJELASAN -->
+    <section class="panel">
+      <h2>3. Perbedaan Mode BUG dan Mode FIX</h2>
+
+      <p class="note">
+        <b>Mode BUG:</b> sistem langsung menambahkan pemesanan tanpa
+        memeriksa apakah nama, film, dan jumlah tiket sudah diisi
+        dengan benar.
+      </p>
+
+      <p class="note">
+        <b>Mode FIX:</b> nama dan film wajib diisi, sedangkan jumlah
+        tiket harus berupa bilangan bulat antara 1 sampai 10.
+      </p>
+
+      <p class="note">
+        Coba kirim formulir kosong atau isi jumlah tiket dengan angka
+        0 untuk melihat perbedaan perilakunya.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    // Variabel utama
+    let mode = "BUG";
+    let bookings = [];
+
+    const bugButton = document.getElementById("bugMode");
+    const fixButton = document.getElementById("fixMode");
+    const form = document.getElementById("bookingForm");
+    const message = document.getElementById("message");
+
+    // Mengubah mode BUG dan FIX
+    function changeMode(selectedMode) {
+      mode = selectedMode;
+
+      document.getElementById("modeLabel").textContent = mode;
+
+      bugButton.classList.toggle("active", mode === "BUG");
+      fixButton.classList.toggle("active", mode === "FIX");
+
+      clearMessage();
+    }
+
+    // Menampilkan pesan
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = type;
+    }
+
+    // Menghapus pesan
+    function clearMessage() {
+      message.textContent = "";
+      message.className = "";
+    }
+
+    // Menampilkan daftar pemesanan
+    function renderBookings() {
+      const list = document.getElementById("bookingList");
+
+      document.getElementById("count").textContent = bookings.length;
+
+      list.innerHTML = "";
+
+      if (bookings.length === 0) {
+        const item = document.createElement("li");
+
+        item.className = "empty";
+        item.textContent = "Belum ada pemesanan.";
+
+        list.appendChild(item);
+        return;
+      }
+
+      bookings.forEach((booking, index) => {
+        const item = document.createElement("li");
+
+        item.textContent =
+          `${index + 1}. ${booking.customer} — ` +
+          `${booking.movie} — ${booking.quantity} tiket`;
+
+        list.appendChild(item);
+      });
+    }
+
+    // Proses pemesanan Mode BUG
+    function prosesBUG(customer, movie, quantityText) {
+      bookings.push({
+        customer: customer || "(nama kosong)",
+        movie: movie || "(film belum dipilih)",
+        quantity: quantityText || "tidak diisi"
+      });
+
+      renderBookings();
+
+      showMessage(
+        "BUG: pemesanan ditambahkan meskipun data belum lengkap.",
+        "success"
+      );
+
+      form.reset();
+    }
+
+    // Proses pemesanan Mode FIX
+    function prosesFIX(customer, movie, quantityText) {
+      const quantity = Number(quantityText);
+
+      if (
+        customer === "" ||
+        movie === "" ||
+        quantityText === ""
+      ) {
+        showMessage(
+          "Validasi gagal: nama, film, dan jumlah tiket wajib diisi.",
+          "error"
+        );
+
+        return;
+      }
+
+      if (
+        !Number.isInteger(quantity) ||
+        quantity < 1 ||
+        quantity > 10
+      ) {
+        showMessage(
+          "Validasi gagal: jumlah tiket harus bilangan bulat 1-10.",
+          "error"
+        );
+
+        return;
+      }
+
+      bookings.push({
+        customer: customer,
+        movie: movie,
+        quantity: quantity
+      });
+
+      renderBookings();
+
+      showMessage(
+        "FIX: pemesanan berhasil ditambahkan.",
+        "success"
+      );
+
+      form.reset();
+    }
+
+    // Event tombol mode
+    bugButton.addEventListener("click", () => {
+      changeMode("BUG");
+    });
+
+    fixButton.addEventListener("click", () => {
+      changeMode("FIX");
+    });
+
+    // Proses formulir pemesanan
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const customer =
+        document.getElementById("customer").value.trim();
+
+      const movie =
+        document.getElementById("movie").value;
+
+      const quantityText =
+        document.getElementById("quantity").value.trim();
+
+      if (mode === "BUG") {
+        prosesBUG(customer, movie, quantityText);
+        return;
+      }
+
+      prosesFIX(customer, movie, quantityText);
+    });
+
+    // Event reset formulir
+    form.addEventListener("reset", function () {
+      clearMessage();
+    });
+
+    // Menghapus semua data pemesanan
+    document.getElementById("clear").addEventListener("click", function () {
+      bookings = [];
+
+      renderBookings();
+      clearMessage();
+    });
+
+    // Menampilkan data awal
+    renderBookings();
+  </script>
+</body>
+
+</html>
